@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Material Availability Checker</title>
+    <link rel="stylesheet" href="material-checker.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">BOM vs stock</p>
+          <h1>Check whether each spool can start fabrication from Store and QC stock.</h1>
+          <p class="hero-text">
+            Upload one Bill of Material file and one inventory file. The checker allocates
+            material from <code>Store</code> first, then falls back to <code>QC</code>, and
+            classifies each spool based on what is actually available.
+          </p>
+          <div class="hero-actions">
+            <button id="load-demo" class="primary-btn" type="button">Load demo</button>
+            <button id="run-analysis" class="ghost-btn" type="button">Run analysis</button>
+            <button id="reset-app" class="ghost-btn" type="button">Reset</button>
+          </div>
+        </div>
+
+        <aside class="hero-panel">
+          <p class="section-tag">Status logic</p>
+          <div class="hero-stat-list">
+            <article class="hero-stat-card"><span>1</span><strong>100% Material Available</strong></article>
+            <article class="hero-stat-card"><span>2</span><strong>100% Material Available but some items are at QC location</strong></article>
+            <article class="hero-stat-card"><span>3</span><strong>Partial Material Available</strong></article>
+            <article class="hero-stat-card"><span>4</span><strong>No Material Available</strong></article>
+          </div>
+          <p id="analysis-status" class="hero-note">Upload both files, then run the checker.</p>
+        </aside>
+      </header>
+
+      <main class="workspace">
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-tag">Inputs</p>
+              <h2>Upload BOM and inventory files</h2>
+            </div>
+            <p class="panel-note">
+              Supports <code>.xlsx</code>, <code>.xls</code>, <code>.xlsb</code>, and
+              <code>.csv</code>.
+            </p>
+          </div>
+
+          <div class="upload-grid">
+            <article class="upload-card">
+              <div class="card-head">
+                <h3>BOM file</h3>
+                <span class="pill">Project requirements</span>
+              </div>
+              <label class="upload-dropzone" for="bom-upload">
+                <strong>Select BOM file</strong>
+                <p>Expected columns: <code>Project Code</code>, <code>Drawing No.</code>, <code>Spool No.</code>, <code>Item Code (ICD)</code>, <code>Total Q'ty</code>.</p>
+                <input id="bom-upload" type="file" accept=".xlsb,.xlsx,.xls,.csv" />
+              </label>
+              <p id="bom-file-info" class="file-info">No BOM file loaded.</p>
+              <div id="bom-column-preview" class="chip-grid"></div>
+            </article>
+
+            <article class="upload-card">
+              <div class="card-head">
+                <h3>Inventory file</h3>
+                <span class="pill">Available stock</span>
+              </div>
+              <label class="upload-dropzone" for="stock-upload">
+                <strong>Select inventory file</strong>
+                <p>Expected columns: <code>Item Code (ICD)</code>, <code>Location</code>, <code>Total Q'ty</code>.</p>
+                <input id="stock-upload" type="file" accept=".xlsb,.xlsx,.xls,.csv" />
+              </label>
+              <p id="stock-file-info" class="file-info">No stock file loaded.</p>
+              <div id="stock-column-preview" class="chip-grid"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="summary-grid">
+          <article class="summary-card accent-card">
+            <span>Total spools</span>
+            <strong id="kpi-total-spools">0</strong>
+            <small>Unique project + drawing + spool combinations</small>
+          </article>
+          <article class="summary-card">
+            <span>100% in Store</span>
+            <strong id="kpi-full-store">0</strong>
+            <small>All items covered from Store</small>
+          </article>
+          <article class="summary-card">
+            <span>100% with QC</span>
+            <strong id="kpi-full-qc">0</strong>
+            <small>QC was needed for full coverage</small>
+          </article>
+          <article class="summary-card">
+            <span>Partial</span>
+            <strong id="kpi-partial">0</strong>
+            <small>Some stock found, some still missing</small>
+          </article>
+          <article class="summary-card">
+            <span>No material</span>
+            <strong id="kpi-none">0</strong>
+            <small>Nothing allocated from Store or QC</small>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-tag">Filters</p>
+              <h2>Review spool result sets</h2>
+            </div>
+          </div>
+          <div class="filters-grid">
+            <label>
+              Status
+              <select id="status-filter">
+                <option value="all">All statuses</option>
+                <option value="100% Material Available">100% Material Available</option>
+                <option value="100% Material Available but some items are at QC location">100% Material Available but some items are at QC location</option>
+                <option value="Partial Material Available">Partial Material Available</option>
+                <option value="No Material Available">No Material Available</option>
+              </select>
+            </label>
+            <label>
+              Search
+              <input id="search-filter" type="search" placeholder="Project, drawing, spool, ICD" />
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-tag">Spool summary</p>
+              <h2>Fabrication readiness by spool</h2>
+            </div>
+            <div class="section-actions">
+              <p id="summary-note" class="panel-note">Run the checker to see spool status.</p>
+              <button id="export-summary" class="ghost-btn" type="button" disabled>Download Excel</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Project Code</th>
+                  <th>Drawing No.</th>
+                  <th>Spool No.</th>
+                  <th>Status</th>
+                  <th class="is-number">Components</th>
+                  <th class="is-number">Required Qty</th>
+                  <th class="is-number">Store Allocated</th>
+                  <th class="is-number">QC Allocated</th>
+                  <th class="is-number">Short Qty</th>
+                </tr>
+              </thead>
+              <tbody id="summary-table-body">
+                <tr>
+                  <td colspan="9"><div class="empty-state">No result yet. Upload files and run the analysis.</div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-tag">Component detail</p>
+              <h2 id="detail-title">Component detail for all shown spools</h2>
+            </div>
+            <div class="section-actions">
+              <p id="detail-note" class="panel-note">Store-first allocation with QC fallback is shown component by component.</p>
+              <button id="export-detail" class="ghost-btn" type="button" disabled>Download Excel</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Project Code</th>
+                  <th>Drawing No.</th>
+                  <th>Spool No.</th>
+                  <th>Status</th>
+                  <th>ICD</th>
+                  <th class="is-number">Required Qty</th>
+                  <th class="is-number">Store Before</th>
+                  <th class="is-number">Store Allocated</th>
+                  <th class="is-number">QC Before</th>
+                  <th class="is-number">QC Allocated</th>
+                  <th class="is-number">Short Qty</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="detail-table-body">
+                <tr>
+                  <td colspan="12"><div class="empty-state">No result yet. Upload files and run the analysis.</div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="material-checker.js"></script>
+  </body>
+</html>
