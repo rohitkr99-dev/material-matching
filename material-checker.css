@@ -335,6 +335,11 @@ code {
   gap: 8px;
 }
 
+.filters-grid .panel-note {
+  margin: 0;
+  align-self: end;
+}
+
 input,
 select {
   border-radius: var(--radius-sm);
@@ -359,7 +364,7 @@ select:focus {
 
 table {
   width: 100%;
-  min-width: 980px;
+  min-width: 1380px;
   border-collapse: collapse;
 }
 
