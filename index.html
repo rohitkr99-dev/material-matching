@@ -57,9 +57,10 @@
               </div>
               <label class="upload-dropzone" for="bom-upload">
                 <strong>Select BOM file</strong>
-                <p>Expected columns: <code>Project Code</code>, <code>Drawing No.</code>, <code>Spool No.</code>, <code>Item Code (ICD)</code>, <code>Total Q'ty</code>.</p>
+                <p>Expected columns: <code>Project Code</code>, <code>Drawing No.</code>, <code>Spool No.</code>, <code>Item Code</code>, <code>Total Q'ty</code>, <code>Priority</code>, <code>Total Wt.</code>, <code>Total Inch Dia</code>, <code>Material</code>.</p>
                 <input id="bom-upload" type="file" accept=".xlsb,.xlsx,.xls,.csv" />
               </label>
+              <p class="panel-note">Keep one master row per spool with a blank <code>Item Code</code>. That row supplies the spool priority, total weight, and total inch dia.</p>
               <p id="bom-file-info" class="file-info">No BOM file loaded.</p>
               <div id="bom-column-preview" class="chip-grid"></div>
             </article>
@@ -71,12 +72,27 @@
               </div>
               <label class="upload-dropzone" for="stock-upload">
                 <strong>Select inventory file</strong>
-                <p>Expected columns: <code>Item Code (ICD)</code>, <code>Location</code>, <code>Total Q'ty</code>.</p>
+                <p>Expected columns: <code>Project Code</code>, <code>Item Code</code>, <code>Location</code>, <code>Total Q'ty</code>.</p>
                 <input id="stock-upload" type="file" accept=".xlsb,.xlsx,.xls,.csv" />
               </label>
               <p id="stock-file-info" class="file-info">No stock file loaded.</p>
               <div id="stock-column-preview" class="chip-grid"></div>
             </article>
+          </div>
+
+          <div class="filters-grid">
+            <label>
+              Analysis Type
+              <select id="analysis-mode">
+                <option value="priority">By Priority</option>
+                <option value="weight">By Wt.</option>
+                <option value="inchDia">By Inch Dia</option>
+                <option value="best">Best Analysis</option>
+              </select>
+            </label>
+            <p id="analysis-mode-note" class="panel-note">
+              Priority treats blank values as the last priority. Best analysis skips partial spool allocations so that stock can be reused for later spools.
+            </p>
           </div>
         </section>
 
@@ -128,7 +144,7 @@
             </label>
             <label>
               Search
-              <input id="search-filter" type="search" placeholder="Project, drawing, spool, ICD" />
+              <input id="search-filter" type="search" placeholder="Project, drawing, spool, ICD, material" />
             </label>
           </div>
         </section>
@@ -151,6 +167,10 @@
                   <th>Project Code</th>
                   <th>Drawing No.</th>
                   <th>Spool No.</th>
+                  <th class="is-number">Priority</th>
+                  <th class="is-number">Total Wt.</th>
+                  <th class="is-number">Total Inch Dia</th>
+                  <th>Material</th>
                   <th>Status</th>
                   <th class="is-number">Components</th>
                   <th class="is-number">Required Qty</th>
@@ -161,7 +181,7 @@
               </thead>
               <tbody id="summary-table-body">
                 <tr>
-                  <td colspan="9"><div class="empty-state">No result yet. Upload files and run the analysis.</div></td>
+                  <td colspan="13"><div class="empty-state">No result yet. Upload files and run the analysis.</div></td>
                 </tr>
               </tbody>
             </table>
@@ -186,8 +206,9 @@
                   <th>Project Code</th>
                   <th>Drawing No.</th>
                   <th>Spool No.</th>
+                  <th>Material</th>
                   <th>Status</th>
-                  <th>ICD</th>
+                  <th>Item Code</th>
                   <th class="is-number">Required Qty</th>
                   <th class="is-number">Store Before</th>
                   <th class="is-number">Store Allocated</th>
@@ -199,7 +220,7 @@
               </thead>
               <tbody id="detail-table-body">
                 <tr>
-                  <td colspan="12"><div class="empty-state">No result yet. Upload files and run the analysis.</div></td>
+                  <td colspan="13"><div class="empty-state">No result yet. Upload files and run the analysis.</div></td>
                 </tr>
               </tbody>
             </table>
